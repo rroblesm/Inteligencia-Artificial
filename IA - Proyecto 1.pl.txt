@@ -1,0 +1,360 @@
+﻿/*         Inteligencia Artificial 
+ *         Andrés Gómez de Silva Garza         
+ *         Proyecto de Programación 1
+ * 
+ *          Rubén Robles Margueri
+ *         
+ *         Notas:
+ *         Representamos los polinomios mediante listas, el orden de los números en la lista 
+ *         corresponde a los coeficientes de un polinomio en orden ascendente según su grado.
+ *         Por ejemplo: [6,2,0,4] se lee como 4x^3 + 2x + 6.
+ *         
+ *         El método toString, así como el constructor, en Java tienen funcionalidades originarias
+ *         de la Programación Orientada a Objetos (POO). Debido a la naturaleza de Prolog poco amistosa
+ *         con POO, decidimos optar por construir los polinomios directamente como listas y hacer un
+ *         predicado to_string que directamente imprima el string del polinomio en lugar de solo realizar 
+ *         la construcción del mismo.
+ */
+
+
+/*
+        Suma de polinomios
+        (1+2x)+(3x+4x^2)=1+5x+4x^2
+        ([1,2],[0,3,4],S) >> S=[1,5,4]
+*/
+RP1 = Parte restante del polinomio 1
+RP2 = Parte restante del polinomio 1
+S=Elemento suma
+*/
+suma([],[],[]).
+suma([],Polinomio2,,Polinomio2).
+suma(Polinomio1,[],Polinomio1).
+suma([Polinomio1|RP1],[Polinomio2|RP2],[S_n|Suma_Resultado]):-
+        suma(RP1,RP2,Suma_Resultado),S_n is Polinomio1+Polinomio2.
+/*
+        Resta de polinomios
+        (2x^3+5x-3)−(2x^3-3x^2+4x)=3x^2+x-3
+        ([-3,5,0,2],[0,4,-3,2],S) >> S=[-3,1,3]
+
+
+P1=Polinomio 1
+P2=Polinomio 2
+R=P1+P2
+n=Número de términos del polinomio  
+        ej. 2x^3+5x-3 = A1 → n(A1) = 3
+*/
+
+
+%n(P1) y n(P2) == 0
+resta([],[],[]) :-!.
+
+
+%n(P2) >  n(P1)
+resta([],A2,-A2).
+
+
+%n(P1) > n(P2)
+resta(A1,[],A1).
+
+
+resta(P1,P2,Respuesta):- 
+
+
+              polinomio_negativo(P2,P2_negativo), %Se asigna el elemento actual de la lista S como la suma 
+                                    %de las cabezas de ambos polinomios 
+            suma(P1,P2_negativo,Respuesta). %Se llama recursivamente el predicado hasta que ya 
+                                                %se hayan sumado todos los coeficientes de ambos polinomios
+
+
+polinomio_negativo([],[]).
+polinomio_negativo([Poli_n|Poli_r], [Poli_negativo|Poli_negativo_r]):-
+    Poli_negativo is Poli_n*(-1),
+    polinomio_negativo(Poli_r,Poli_negativo_r).
+/*
+    Predicado auxiliar usado en balanceaGrado que determina los ceros que 
+    deden ser agregados.
+*/
+determinaCeros(_,0,[]).%Si el grado es cero, directamente se regresa una lista vacía
+determinaCeros(Cero,1,[Cero]). %Si el grado es uno, se regresa una lista con un solo cero.
+determinaCeros(Cero,Grado,[Cero|C]):- %Para grados mayores a uno.
+        Grado>0, %Caso base.
+        Nuevo_Grado is Grado-1,
+        determinaCeros(Cero,Nuevo_Grado,C). %Recursivamente se agregan los ceros a la lista nueva 
+/*
+    Predicado que añade 0 por la izquierda en la lista para representar 
+    la multiplicacion, es decir, que se aumenta de grado. 
+*/
+balanceaGrado(Resultado_Preliminar,0,Resultado_Final). %Si el grado es cero, se regresa la lista dada.
+balanceaGrado(Resultado_Preliminar,Grado,Resultado_Final):-
+        Grado>0,
+        determinaCeros(0,Grado,Ceros),%Crea la lista con los ceros necesarios para balancear el grado.
+        append(Ceros,Resultado_Preliminar,Resultado_Final).%Une las listas de ceros y elementos, dejando la de ceros a la izquierda
+/*
+    Predicado que multiplica un escalar por un polinomio.
+    5(4x^3 + 3x^2 + 2x + 1)= 20x^3 + 15x^2 + 10x + 5  
+    multc(5,[1,2,3,4],R) >> [5, 10, 15, 20]
+*/
+multc(0,_,[]). %Caso en el que el coeficiente es cero, directamente regresa una lista vacía.
+multc(_,[],[]). %Caso en el que el polinomio esté vacío, directamente regresa una lista vacía.
+multc(Escalar,[Cabeza|Cola],[Cabeza_Resultante|Cola_Resultante]):-
+        Cabeza_Resultante is Escalar*Cabeza,
+        multc(Escalar,Cola,Cola_Resultante). %recursivamente se van multiplicando los coeficientes y se van guardando en una lista.
+/*
+    Predicado que multiplica un polinomio por un monomio.
+    2x(4x^3 + 3x^2 + 2x + 1) = 8x^4 + 6x^3 + 4x^2 + 2x 
+    mult(1,2,[1,2,3,4],R) >> [0, 2, 4, 6, 8]
+*/
+mult(_,_,[],[]). %Caso en el que el polinomio esté vacío, directamente regresa una lista vacía.
+mult(_,0,_,[]).%Caso en el que el coeficiente es cero, directamente regresa una lista vacía.
+mult(Grado,Coeficiente,Polinomio,Resultado):-
+        multc(Coeficiente,Polinomio,Resultado_1),%Solo se multiplican los coeficientes y se regresa una lista con el mismo número de elementos.
+        balanceaGrado(Resultado_1,Grado,Resultado).%Se recorre la lista para representar el aumento de grado.
+/*
+    Multiplicación de polinomios.
+    (4x^3 + 3x^2 + 2x + 1)(3x^2 + 5) = 12x^5 + 9x^4 + 26x^3 + 18x^2 + 10x + 5
+    multPolinomios([1,2,3,4],[5,0,3],R) >> [5, 10, 18, 26, 9, 12]
+*/
+multPolinomios(_,[],[]). %Caso en el que el primer polinomio esté vacío, directamente regresa una lista vacía.
+multPolinomios([],_,[]). %Caso en el que el segundo polinomio esté vacío, directamente regresa una lista vacía.
+multPolinomios(Polinomio_1,Polinomio_2,Resultado):-
+        multPolinomios(0,Polinomio_1,Polinomio_2,Resultado).
+multPolinomios(_,[],_,[]). %Caso en el que el primer polinomio esté vacío, directamente regresa una lista vacía.
+multPolinomios(_,_,[],[]). %Caso en el que el segundo polinomio esté vacío, directamente regresa una lista vacía.
+multPolinomios(Grado,[Cabeza|Cola],Polinomio_2,Resultado):-
+        G1 is Grado+1,
+        multPolinomios(G1,Cola,Polinomio_2,Resultado_1), %Recursivamente se va a aumentar G1 hasta que se vacíe la lista, para determinar el grado del polinomio.
+        mult(Grado,Cabeza,Polinomio_2,Resultado_2),
+        suma(Resultado_1,Resultado_2,Resultado).
+/*
+        Predicados que concatenan una lista en otra.
+        list_concat([1,2,3],[7,9,9],R) >> [1, 2, 3, 7, 9, 9]
+*/
+lista_concat([],Lista_2,Lista_2). %Caso base, si la lista original se recorrió completa, se envía la lista a concatenar como la nueva lista.
+lista_concat([Cabeza|Lista_1],Lista_2,[Cabeza|Lista_3]) :- lista_concat(Lista_1,Lista_2,Lista_3). %Recursivamente se recorre la lista insertando la cabeza de la lista original en la nueva lista.
+
+
+
+
+/*
+        Predicados para invertir los elementos de una lista.
+        lista_rev([1,2,3,4],R) >> [4, 3, 2, 1]
+*/
+lista_rev([],[]).
+lista_rev([Cabeza|Cola],Alreves) :-
+   lista_rev(Cola, Cola_Alreves),
+   lista_concat(Cola_Alreves, [Cabeza],Alreves).
+
+
+/*
+    Composición de polinomios
+    Se hace composición de polinomios de la forma P1 ∘ P2, también conocido como P1(P2(x)).
+    La composición de funciones se realiza evaluando un polinomio dentro de otro:
+    (2x-4) ∘ (-4x+3)=−8x+2
+    ([-4,2],[3,-4],C) >> C=[2,-8]
+*/
+composicion(Polinomio1,[],Polinomio1). %Caso en el que Polinomio2 esté vacío, no se realiza nada y regresa Polinomio1.
+composicion(Polinomio1,Polinomio2,Resultado):- %Caso en el que Polinomio2 no esté vacio.
+    list_rev(Polinomio1, Polinomio1_rev),        %Se invierte el primer polinomio para poder usar el método de Horner.
+    composicion(Polinomio1_rev,Polinomio2,[0],Resultado). %Se envía al predicado auxiliar los polinomios y un polinomio auxiliar.
+
+
+composicion([],_,Composicion,Composicion). %Caso base, cuando el primer polinomio se evaluó completamente, el polinomio auxiliar es la composición de los polinomios.
+composicion([A|Polinomio1],B,C,Resultado):-        %Caso en el que aún hay elementos en el primer polinomio.
+    multPolinomios(B,C,MultBC),
+    suma([A], MultBC, Suma),
+    composicion(P1,B,Suma,Resultado).        %Recursivamente se evalúa B en P1 y se actualiza el polinomio auxiliar
+/*
+Evaluar polinomio
+Dado un polinomio A(x), se recibe x y se evalúa tal que A(x)=R
+Sea x=3, (4x^3 + 3x^2 + 2x + 1)=142  La constante (C) = 1 
+([1,2,3,4],3,R) >> R=142
+*/
+evaluar(Polinomio,X,R):-
+    evaluar(Polinomio,X,0,R).
+
+
+%Cuando ya no hay elementos por evaluar en el polinomio, se escribe la variable R y 
+%se termina el programa
+evaluar([],_,_,0).
+
+
+% R + C
+evaluar([A1|RA],X,0,R):-
+    evaluar(RA,X,1,R1),
+    R is A1+R1.
+
+
+%Cuando x^p =\= x^0 --> siendo p la potencia actual
+%A1 = coeficiente del polinomio
+%RA = resto del polinomio
+%Aux = variable auxiliar que guarda el resultado de la evaluación de un término
+evaluar([A1|RA],X,P,R):-
+    P1 is P+1,
+    evaluar(RA,X,P1,R1),
+    Aux is A1*(X**P),
+    R is Aux+R1.
+
+
+
+
+%La regla 'publica', análoga a la función pública de métodos recursivos en Java y Python
+%%        El 0 es el grado con el que empieza cualquier polinomio.
+derivada(Polinomio,Resultado):-
+        derivada(0,Polinomio,Resultado).
+
+
+%Cuando llegemos al caso de la lista vacia se llega a un true,
+%% y por lo tanto se detiene el proceso recursivo.
+derivada(_,[],[]). 
+
+
+%esta regla se usa para desplazar a los elementos de la lista 1 lugar y hacer la lista mas chica
+%%        de otro modo, los coeficientes no corresponden con el grado
+%%  e.g. (1+3x+2x^2)' = 3x + 4x^2 en lugar de 3+4x
+derivada(0,[_|T],S):-
+    derivada(1,T,S).
+/*
+    El proceso consiste de 3 pasos:
+     1. Con P, ir sumando 1 para llevar conteo del grado
+     2. Construir la lista del polinomio resultante con S_n * (el grado actual) 
+     3. Recortar la lista de coeficientes en Poli_Restante
+*/
+derivada(P,[X_n|Poli_Restante],[S_n|Poli_Resultado]):-
+    P1 is P+1,
+    derivada(P1,Poli_Restante,Poli_Resultado),
+        S_n is X_n * P.
+
+
+%Predicado que obtiene el valor absoluto de un número.
+valor_abs(Num, Abs):-
+    ( Num < 0 ->  
+            Abs is Num * -1
+    ; Num > 0 ->  
+            Abs is Num * 1
+    ).
+
+
+/*
+Predicado que imprime un polinomio de la forma Ax^n + Bx^(n-1) + ... + Cx + D
+a partir de la lista de coeficientes ordenados por grado ascendiente.
+*/
+to_string(Polinomio):-
+    string_builder(0, Polinomio, Lista),
+        to_string(Lista, '').
+
+
+string_builder(_,[],[]). %Caso base cuando ya no quedan elementos en el polinomio
+string_builder(0, [X_n|Poli_Restante],[S_n|Cadena]):-   
+    ( X_n > 0 ->
+            atom_concat(X_n, '', S_n),
+        Signo_n = ' + '
+     ; X_n < 0 ->
+            valor_abs(X_n, X_abs),
+            atom_concat(X_abs, '', S_n),
+            Signo_n = ' - '
+     ; X_n < 0 ->
+    ),
+    string_builder(1, Poli_Restante, Signo_n, Cadena).
+
+
+string_builder(_,[],Signo,[Signo_n]):- % Caso 0: Si el elemento es 0, lo unico que hace es mandar el signo al siguiente coeficiente, para dar una impresion correcta
+    ( Signo == ' + ' ->
+            Signo_n = ''
+    ; Signo == ' - ' ->
+            Signo_n = Signo
+    ; Signo == '' ->
+            Signo_n = Signo
+    ).
+string_builder(1, [X_n|Poli_Restante], Signo, [S_n|Cadena]):- %Caso 1: Cuando es grado 1, la x no se eleva a la 1, queda implicito
+    ( X_n > 0 ->
+        atom_concat(X_n, 'x', A), 
+            atom_concat(A, Signo, S_n),
+            Signo_n = ' + '
+     ; X_n < 0 ->
+            valor_abs(X_n, X_abs),
+            atom_concat(X_abs, 'x', A), 
+            atom_concat(A, Signo, S_n),
+        Signo_n = ' - '
+     ; X_n =:= 0 ->  
+        atom_concat('', '', S_n),
+        Signo_n = Signo
+    ),
+    string_builder(2, Poli_Restante, Signo_n, Cadena).
+
+
+string_builder(Grado, [X_n|Poli_Restante], Signo, [S_n|Cadena]):- %Caso n>=2, trabaja de manera normal: Se pone el coeficiente y x elevado al grado n respectivo
+    Grado1 is Grado+1,
+    ( X_n > 0 ->
+        atom_concat(X_n, 'x^', A), 
+            atom_concat(A, Grado, B),
+            atom_concat(B, Signo, S_n),
+            Signo_n = ' + '
+     ; X_n < 0 ->
+            valor_abs(X_n, X_abs),
+            atom_concat(X_abs, 'x^', A), 
+            atom_concat(A, Grado, B),
+            atom_concat(B, Signo, S_n),
+        Signo_n = ' - '
+     ; X_n =:= 0 ->  
+        atom_concat('', '', S_n),
+        Signo_n = Signo
+    ),
+    string_builder(Grado1, Poli_Restante, Signo_n, Cadena).
+
+
+to_string([], String):-
+    writeln(String).
+to_string([X_n|Str_restante], String):-
+    atom_concat(X_n, String, Nuevo_Str),
+    to_string(Str_restante, Nuevo_Str).
+
+
+/*************************************************************************
+ * Este es un predicado para ejecutar una serie de ejemplos que se pueden
+ * encontrar en el archivo 'Polynomials.java'.
+ * El resultado de ejecutar el predicado polynomials deberá ser:
+ *
+ *  zero(x)     = 0
+ *  p(x)        = 4x^3 + 3x^2 + 2x + 1
+ *  q(x)        = 3x^2 + 5
+ *  p(x) + q(x) = 4x^3 + 6x^2 + 2x + 6
+ *  p(x) * q(x) = 12x^5 + 9x^4 + 26x^3 + 18x^2 + 10x + 5
+ *  p(q(x))     = 108x^6 + 567x^4 + 996x^2 + 586
+ *  0 - p(x)    = -4x^3 - 3x^2 - 2x - 1
+ *  p(3)        = 142
+ *  p'(x)       = 12x^2 + 6x + 2
+ *  p''(x)      = 24x + 6
+ *
+ *************************************************************************/
+polynomials:-
+    Zero = [0],
+    P = [1,2,3,4],
+    Q = [5,0,3],
+    write('zero(x)     = '),
+    to_string(Zero),
+    write('p(x)        = '),
+    to_string(P),
+    write('q(x)        = '),
+    to_string(Q),
+    write('p(x) + q(x) = '),
+    suma(P,Q,Suma),
+    to_string(Suma),
+    write('p(x) * q(x) = '),
+    multPolinomios(P,Q,Mult),
+    to_string(Mult),
+    write('p(q(x))     = '),
+    composicion(P,Q,Comp),
+    to_string(Comp),
+    write('0 - p(x)    = '),
+    resta(Zero,P,Resta),
+    to_string(Resta),
+    write('p(3)        = '),
+    evaluar(P,3,P_evaluada),
+    writeln(P_evaluada),
+    write("p'(x)       = "),
+    derivada(P,Derivada),
+    to_string(Derivada),
+    write("p''(x)      = "),
+    derivada(Derivada,Dob_derivada),
+    to_string(Dob_derivada),
+    !.
